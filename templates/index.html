@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Availability Status</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f4f8;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+        .person {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fafafa;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .person:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+        }
+        .person-name {
+            font-size: 18px;
+            font-weight: 500;
+            color: #333;
+        }
+        .available {
+            color: green;
+            font-weight: bold;
+        }
+        .not-available {
+            color: red;
+            font-weight: bold;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        button:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Team Availability</h1>
+    <div class="container" id="people-list">
+        {% for person in people %}
+            <div class="person" id="person-{{ person.id }}">
+                <div class="person-name">
+                    {{ person.name }} - 
+                    <span id="status-{{ person.id }}" class="{{ 'available' if person.available else 'not-available' }}">
+                        {{ 'Available' if person.available else 'Not Available' }}
+                    </span>
+                </div>
+                <button onclick="toggleAvailability({{ person.id }})">Toggle</button>
+            </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        function toggleAvailability(personId) {
+            fetch(`/toggle_availability/${personId}`, {
+                method: 'POST',
+            })
+            .then(response => response.json())
+            .then(data => {
+                let statusSpan = document.getElementById(`status-${personId}`);
+                if (data.new_status) {
+                    statusSpan.className = 'available';
+                    statusSpan.textContent = 'Available';
+                } else {
+                    statusSpan.className = 'not-available';
+                    statusSpan.textContent = 'Not Available';
+                }
+            })
+            .catch(error => {
+                console.error("Error toggling availability:", error);
+            });
+        }
+    </script>
+</body>
+</html>
