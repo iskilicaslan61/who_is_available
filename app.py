@@ -16,6 +16,10 @@ people = [
 def home():
     return render_template('index.html', people=people)
 
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))  
+    app.run(host="0.0.0.0", port=port)  
+    
 @app.route('/toggle_availability/<int:person_id>', methods=['POST'])
 def toggle_availability(person_id):
     person = next((p for p in people if p["id"] == person_id), None)
