@@ -12,7 +12,8 @@ people = [
     {"id": 5, "name": "Eduardo", "available": False},
     {"id": 6, "name": "Ismail", "available": False},
     {"id": 7, "name": "ash", "available": False},
-    {"id": 8, "name": "anderew" "available": True},
+    {"id": 8, "name": "John", "available": False},
+    {"id": 9, "name": "anderew" "available": True},
 ]
 
 @app.route('/')
