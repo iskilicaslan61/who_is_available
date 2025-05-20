@@ -77,7 +77,9 @@
                         {{ 'Available' if person.available else 'Not Available' }}
                     </span>
                 </div>
-                <button onclick="toggleAvailability({{ person.id }})">Toggle</button>
+                <button type="button" onclick="console.log('clicked'); toggleAvailability({{ person.id }})">
+    Toggle
+</button>
             </div>
         {% endfor %}
     </div>
