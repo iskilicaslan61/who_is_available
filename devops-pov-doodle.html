@@ -106,7 +106,55 @@ button:focus-visible{outline:3px solid var(--pen);outline-offset:3px}
   .stamp{animation:stamp .5s cubic-bezier(.3,1.8,.5,1) .3s backwards}
   @keyframes stamp{from{opacity:0;scale:2.2;rotate:8deg}}
   .panel:hover{translate:0 -4px;transition:translate .15s}
+
+  /* chaos: every panel twitches on its own clock */
+  .panel{animation:pop .7s cubic-bezier(.3,1.6,.5,1) backwards,jig 4s steps(1) infinite;animation-delay:calc(var(--i,0) * 110ms),calc(var(--i,0) * -1.3s)}
+  .panel:nth-child(1){animation-duration:.7s,3.1s}.panel:nth-child(2){animation-duration:.7s,4.3s}
+  .panel:nth-child(3){animation-duration:.7s,5.7s}.panel:nth-child(4){animation-duration:.7s,3.7s}
+  .panel:nth-child(5){animation-duration:.7s,6.1s}.panel:nth-child(6){animation-duration:.7s,4.9s}
+  .panel:nth-child(7){animation-duration:.7s,2.9s}.panel:nth-child(8){animation-duration:.7s,5.3s}
+  @keyframes jig{
+    0%,90%,100%{rotate:0deg;translate:0 0}
+    91%{rotate:-2.2deg;translate:4px -3px}
+    93%{rotate:1.8deg;translate:-5px 2px}
+    95%{rotate:-1deg;translate:2px 4px}
+    97%{rotate:2.4deg;translate:-3px -2px}
+  }
+  h1{animation:glitch 3.4s steps(1) infinite}
+  @keyframes glitch{
+    0%,90%,100%{text-shadow:none;translate:0 0}
+    91%{text-shadow:4px 0 var(--marker),-4px 0 var(--pen);translate:3px 0}
+    93%{text-shadow:-5px 2px var(--marker),5px -2px var(--pen);translate:-4px 1px}
+    95%{text-shadow:3px 0 var(--marker),-3px 0 var(--pen);translate:2px -1px}
+  }
+  .stamp{animation:stamp .5s cubic-bezier(.3,1.8,.5,1) .3s backwards,stampwig 1.7s ease-in-out 1s infinite}
+  @keyframes stampwig{50%{rotate:5deg;scale:1.08}}
+  .ticker span{animation:tick 16s linear infinite}
+  @keyframes tick{to{translate:-50% 0}}
+  .toast{animation:toastin .35s cubic-bezier(.3,1.7,.5,1) backwards}
+  @keyframes toastin{from{opacity:0;translate:60px 0;rotate:6deg}}
+  .toast.out{animation:toastout .25s ease-in forwards}
+  @keyframes toastout{to{opacity:0;translate:80px 0}}
+  .wrap.quake{animation:quake .55s linear}
+  @keyframes quake{
+    0%,100%{translate:0 0;rotate:0}
+    10%{translate:-10px 6px;rotate:-.6deg}20%{translate:9px -7px;rotate:.5deg}
+    30%{translate:-8px -5px;rotate:-.4deg}40%{translate:10px 5px;rotate:.6deg}
+    50%{translate:-6px 7px;rotate:-.5deg}60%{translate:7px -4px;rotate:.3deg}
+    70%{translate:-5px 3px}80%{translate:4px -3px}90%{translate:-2px 2px}
+  }
 }
+
+.ticker{overflow:hidden;white-space:nowrap;border:2.5px solid var(--marker);border-radius:4px 10px 5px 9px;background:var(--card);
+  font-family:var(--f-mono);font-weight:700;font-size:14px;color:var(--marker);padding:5px 0;margin-bottom:22px}
+.ticker span{display:inline-block;padding-left:0}
+.toasts{position:fixed;z-index:20;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));
+  display:flex;flex-direction:column;gap:10px;width:min(310px,calc(100vw - 32px));pointer-events:none}
+.toast{pointer-events:auto;cursor:pointer;background:var(--card);border:2.5px solid var(--ink);border-radius:6px 12px 7px 11px;
+  box-shadow:4px 4px 0 var(--ink);padding:8px 12px;font-size:17px;line-height:1.2;display:flex;flex-direction:column;gap:2px;text-align:left}
+.toast b{font-family:var(--f-mono);font-size:12.5px;letter-spacing:.05em;color:var(--marker)}
+.toast.warn b{color:var(--pen)}
+.toast:focus-visible{outline:3px solid var(--pen);outline-offset:2px}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
@@ -116,7 +164,9 @@ button:focus-visible{outline:3px solid var(--pen);outline-offset:3px}
   </filter>
 </svg>
 
-<div class="wrap">
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="wrap" id="wrap">
+  <div class="ticker" aria-hidden="true"><span>ALERT: disk 94% /// ALERT: p99 latency 5.2s /// ALERT: cert expires in 2d /// ALERT: pod restarted 41 times /// ALERT: Karen from billing is typing /// ALERT: disk 94% /// ALERT: p99 latency 5.2s /// ALERT: cert expires in 2d /// ALERT: pod restarted 41 times /// ALERT: Karen from billing is typing /// </span></div>
   <header>
     <div>
       <h1>Life as a <mark>DevOps</mark> engineer</h1>
@@ -277,8 +327,33 @@ worker-5c-lp9        1/1    <span class="good">Running</span></pre>
     "status: DNS. it was DNS.",
     "status: all green (suspicious)"
   ], i=0, el=document.getElementById('status');
+  var alive = window.matchMedia && matchMedia('(prefers-reduced-motion: no-preference)').matches;
+  var box=document.getElementById('toasts'), wrapEl=document.getElementById('wrap');
+  var alerts=[
+    ['PAGERDUTY','api-prod: error rate 38%'],['SLACK','@here is the site down?'],['K8S','node ip-10-0-3-17 NotReady'],
+    ['CERT','*.internal expires in 36h'],['BILLING','AWS bill is up 212% this week'],['CI','main is red again'],
+    ['SLACK','"quick question" (it is not)'],['DNS','it is DNS'],['DISK','/var/log at 99%'],['JIRA','TKT-4413 assigned to you'],
+    ['PAGERDUTY','you have been paged 6 times'],['GRAFANA','dashboard is just red']
+  ];
+  function toast(a){
+    var t=document.createElement('button'); t.type='button'; t.className='toast'+(Math.random()<.3?' warn':'');
+    t.innerHTML='<b></b><span></span>'; t.firstChild.textContent=a[0]; t.lastChild.textContent=a[1];
+    var gone=false;
+    function kill(){ if(gone) return; gone=true; if(alive){t.classList.add('out'); setTimeout(function(){t.remove()},260);} else t.remove(); }
+    t.addEventListener('click',kill); setTimeout(kill,6500);
+    box.appendChild(t);
+    while(box.children.length>5) box.firstChild.remove();
+  }
+  function rand(){ return alerts[Math.floor(Math.random()*alerts.length)]; }
+  if(alive){
+    (function loop(){ toast(rand()); setTimeout(loop, 1800+Math.random()*2600); })();
+    var stamp=document.querySelector('.stamp'), stampMsgs=["POV: you're on call","SEV-1 SEV-1 SEV-1","POV: it's 3am","who touched prod?"], si=0;
+    setInterval(function(){ si=(si+1)%stampMsgs.length; stamp.textContent=stampMsgs[si]; },2600);
+  }
   document.getElementById('page').addEventListener('click',function(){
     i=(i+1)%msgs.length; el.textContent=msgs[i];
+    for(var n=0;n<6;n++) (function(k){ setTimeout(function(){ toast(rand()); }, alive?k*90:0); })(n);
+    if(alive){ wrapEl.classList.remove('quake'); void wrapEl.offsetWidth; wrapEl.classList.add('quake'); }
   });
 })();
 </script>
